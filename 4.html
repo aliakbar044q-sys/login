@@ -1,0 +1,692 @@
+<!-- ============================================================
+  KALI LINUX CYBER SECURITY SIMULATION WEBSITE
+  VERSION: PREBUILD v1.0
+  PART: 1 OF 10 (ABOUT ~500 LINES)
+  CREATED: BY REQUEST
+  THEME: FULL HACKER TERMINAL EXPERIENCE
+===============================================================-->
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kali Web Terminal</title>
+
+<style>
+
+/* ============================================================
+   GLOBAL THEME SETTINGS
+   Style: Full Terminal Dark + Matrix Effect
+===============================================================*/
+
+:root {
+    --bg: #000000;
+    --green: #11ff55;
+    --text: #00ff99;
+    --scan: #00ff44;
+    --error: #ff0033;
+    --terminal-border: #044;
+    --glow: 0 0 8px #00ff55;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Courier New", monospace;
+    overflow: hidden;
+}
+
+/* ============================================================
+   MATRIX BACKGROUND ANIMATION
+===============================================================*/
+
+canvas#matrix {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+/* ============================================================
+   TERMINAL LOGIN WINDOW
+===============================================================*/
+
+#loginWindow {
+    width: 650px;
+    margin: 100px auto;
+    padding: 25px;
+    border: 2px solid var(--terminal-border);
+    background: rgba(0, 0, 0, 0.85);
+    box-shadow: 0 0 20px #00ff55;
+    border-radius: 8px;
+    text-align: left;
+}
+
+#loginWindow h1 {
+    margin: 0;
+    margin-bottom: 10px;
+    font-size: 22px;
+}
+
+#terminalOutput {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--terminal-border);
+    padding: 10px;
+    background: rgba(10, 20, 10, 0.6);
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.inputRow {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.inputRow label {
+    width: 120px;
+    font-size: 16px;
+}
+
+.inputRow input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--terminal-border);
+    background: black;
+    color: var(--text);
+}
+
+#loginBtn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: #003300;
+    color: var(--text);
+    border: 2px solid var(--terminal-border);
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#loginBtn:hover {
+    background: black;
+    box-shadow: 0 0 10px var(--scan);
+}
+
+/* ERROR TEXT */
+#loginError {
+    color: var(--error);
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* ============================================================
+   FULL TERMINAL DESKTOP VIEW (AFTER LOGIN)
+===============================================================*/
+
+#desktop {
+    display: none;
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Taskbar Style */
+#taskbar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 45px;
+    background: rgba(0, 0, 0, 0.85);
+    border-top: 2px solid #003300;
+    display: flex;
+    align-items: center;
+    padding: 5px 15px;
+}
+
+.task-btn {
+    padding: 8px 15px;
+    margin-right: 10px;
+    background: #001100;
+    border: 1px solid #003300;
+    cursor: pointer;
+}
+
+.task-btn:hover {
+    background: #003300;
+}
+
+/* Terminal Window Style */
+
+.terminalWindow {
+    width: 800px;
+    height: 500px;
+    background: #000;
+    border: 2px solid #005500;
+    position: absolute;
+    top: 60px;
+    left: 80px;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 0 20px #009944;
+}
+
+.terminalHeader {
+    background: #003300;
+    padding: 5px;
+}
+
+.terminalHeader span {
+    font-weight: bold;
+}
+
+.terminalContent {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.terminalInput {
+    display: flex;
+    padding: 5px;
+    border-top: 2px solid #005500;
+}
+
+.terminalInput input {
+    flex: 1;
+    background: black;
+    border: none;
+    color: var(--green);
+    font-family: Courier;
+    font-size: 16px;
+}
+
+/* Cursor blinking */
+.cursor {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+</style>
+</head>
+
+<body>
+    <!-- =========================
+   CODE SNIPPETS / PLAYGROUND
+   Add this block BEFORE </body>
+   ========================= -->
+
+<!-- Button on taskbar: Code -->
+<style>
+/* simple styles for code modal (self-contained) */
+#codeModal {
+  position: fixed;
+  inset: 40px;
+  background: rgba(2,6,10,0.95);
+  border: 1px solid #003300;
+  box-shadow: 0 0 30px #007755;
+  color: #c8ffee;
+  z-index: 9999;
+  display: none;
+  border-radius: 8px;
+  padding: 14px;
+  overflow: auto;
+}
+#codeModal header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+#codeModal .tabs { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap }
+.tabBtn { background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--text); padding:6px 10px; border-radius:6px; cursor:pointer; font-family:monospace; }
+.tabBtn.active { background:#003300; box-shadow:0 0 8px #00ff66; color:#001f10 }
+.codeArea { margin-top:12px; display:flex; gap:12px; }
+pre.codeBlock {
+  background:#00110b;
+  border:1px solid rgba(0,255,102,0.06);
+  padding:12px; border-radius:6px; overflow:auto; width:70%; max-height:60vh;
+  font-family: "Courier New", monospace; font-size:13px; color:#bfffcf;
+}
+.controls { width:30%; display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.btnSmall { padding:8px 10px; border-radius:8px; background:#004422; border:none; color:#cffff0; cursor:pointer; }
+.outputBox { background:#000; border:1px solid #003300; padding:8px; width:100%; min-height:120px; color:#6fffb8; border-radius:6px; font-family:monospace; font-size:13px; overflow:auto; }
+.closeModal { background:#220000; color:#ffd6d6; border:1px solid #440000; padding:6px 10px; border-radius:6px; cursor:pointer; }
+.smallMuted { color: #89a3a3; font-size:13px; }
+.copyTip { font-size:12px; color:#9ee; margin-top:6px; }
+</style>
+
+<!-- modal -->
+<div id="codeModal" role="dialog" aria-modal="true" aria-label="Code snippets modal">
+  <header>
+    <div>
+      <strong style="font-size:17px">Code Playground — Multi-language Snippets</strong>
+      <div class="smallMuted">View examples: Python, Go, Java, C, Rust, PHP, Bash, SQL, JavaScript</div>
+    </div>
+    <div>
+      <button class="closeModal" id="closeCodeModal">Close</button>
+    </div>
+  </header>
+
+  <div class="tabs" id="codeTabs">
+    <!-- tabs will be inserted by JS -->
+  </div>
+
+  <div class="codeArea">
+    <pre class="codeBlock" id="codeBlock" spellcheck="false">// Choose a language tab to see code</pre>
+    <div class="controls">
+      <button class="btnSmall" id="copyCodeBtn">Copy Code</button>
+      <button class="btnSmall" id="runJsBtn">Run (JS only)</button>
+      <div class="copyTip">Tip: JavaScript can run here. Other languages shown as examples only.</div>
+      <div style="margin-top:8px;font-weight:700">Output</div>
+      <div class="outputBox" id="codeOutput">-- output console --</div>
+      <div style="margin-top:8px" class="smallMuted">Note: To execute Python/Go/Java/C/Rust/PHP/Bash you need a server or local toolchain. This demo is read-only for those languages.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Add "Code" button to taskbar if exists -->
+<script>
+(function(){
+  // create taskbar button
+  const tb = document.getElementById('taskbar');
+  if(tb){
+    const codeBtn = document.createElement('button');
+    codeBtn.className = 'task-btn';
+    codeBtn.textContent = 'Code';
+    codeBtn.addEventListener('click', ()=> openCodeModal() );
+    tb.insertBefore(codeBtn, tb.firstChild);
+  }
+
+  // languages + sample snippets
+  const snippets = {
+    "JavaScript": {
+      lang: "javascript",
+      code: `// JavaScript example
+function fib(n){
+  if(n<=1) return n;
+  return fib(n-1)+fib(n-2);
+}
+console.log("Fibonacci(10):", fib(10));`
+    },
+    "Python": {
+      lang: "python",
+      code: `# Python example
+def fib(n):
+    a,b = 0,1
+    for _ in range(n):
+        a,b = b, a+b
+    return a
+
+print("Fibonacci(10):", fib(10))`
+    },
+    "Go": {
+      lang: "go",
+      code: `// Go example
+package main
+import "fmt"
+func fib(n int) int {
+    if n<=1 { return n }
+    return fib(n-1)+fib(n-2)
+}
+func main(){
+    fmt.Println("Fibonacci(10):", fib(10))
+}`
+    },
+    "Java": {
+      lang: "java",
+      code: `// Java example
+class Fib {
+  static int fib(int n){
+    if(n<=1) return n;
+    return fib(n-1)+fib(n-2);
+  }
+  public static void main(String[] a){
+    System.out.println("Fibonacci(10): " + fib(10));
+  }
+}`
+    },
+    "C": {
+      lang: "c",
+      code: `/* C example */
+#include <stdio.h>
+
+int fib(int n){
+  if(n<=1) return n;
+  return fib(n-1)+fib(n-2);
+}
+
+int main(){
+  printf("Fibonacci(10): %d\\n", fib(10));
+  return 0;
+}`
+    },
+    "Rust": {
+      lang: "rust",
+      code: `// Rust example
+fn fib(n: u32) -> u32 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fib(n-1) + fib(n-2),
+    }
+}
+fn main(){
+    println!("Fibonacci(10): {}", fib(10));
+}`
+    },
+    "PHP": {
+      lang: "php",
+      code: `<?php
+// PHP example
+function fib($n){
+  if($n<=1) return $n;
+  return fib($n-1) + fib($n-2);
+}
+echo "Fibonacci(10): " . fib(10) . "\\n";
+?>`
+    },
+    "Bash": {
+      lang: "bash",
+      code: `# Bash example (iterative)
+fib() {
+  a=0; b=1
+  for ((i=0;i<$1;i++)); do
+    tmp=$((a+b)); a=$b; b=$tmp
+  done
+  echo $a
+}
+echo "Fibonacci(10): $(fib 10)"`
+    },
+    "SQL": {
+      lang: "sql",
+      code: `-- SQL example (recursive CTE, Postgres)
+WITH RECURSIVE fib(n, val, next) AS (
+  SELECT 0, 0, 1
+  UNION ALL
+  SELECT n+1, next, val+next FROM fib WHERE n < 10
+)
+SELECT n, val FROM fib;`
+    }
+  };
+
+  // build tabs
+  const tabsEl = document.getElementById('codeTabs');
+  Object.keys(snippets).forEach((name, idx) => {
+    const b = document.createElement('button');
+    b.className = 'tabBtn' + (idx===0 ? ' active' : '');
+    b.textContent = name;
+    b.setAttribute('data-lang', snippets[name].lang);
+    b.addEventListener('click', ()=> selectTab(name));
+    tabsEl.appendChild(b);
+  });
+
+  const modal = document.getElementById('codeModal');
+  const codeBlock = document.getElementById('codeBlock');
+  const outputBox = document.getElementById('codeOutput');
+
+  // initial selection
+  let current = Object.keys(snippets)[0];
+  codeBlock.textContent = snippets[current].code;
+
+  function selectTab(name){
+    current = name;
+    codeBlock.textContent = snippets[name].code;
+    // active class
+    qAll('.tabBtn').forEach(t => t.classList.toggle('active', t.textContent===name));
+    outputBox.textContent = '-- output console --';
+  }
+
+  function qAll(sel){ return Array.from(document.querySelectorAll(sel)); }
+
+  // open/close
+  window.openCodeModal = function(){
+    modal.style.display = 'block';
+    // ensure first tab selected if none
+    selectTab(current);
+  };
+  document.getElementById('closeCodeModal').addEventListener('click', ()=> modal.style.display = 'none');
+
+  // copy code
+  document.getElementById('copyCodeBtn').addEventListener('click', async ()=>{
+    try {
+      await navigator.clipboard.writeText(codeBlock.textContent);
+      outputBox.textContent = 'Code copied to clipboard ✔';
+    } catch(e){
+      outputBox.textContent = 'Copy failed: ' + (e.message||e);
+    }
+  });
+
+  // run JS
+  document.getElementById('runJsBtn').addEventListener('click', ()=>{
+    if (snippets[current].lang !== 'javascript') {
+      outputBox.textContent = 'Running only supported for JavaScript in-browser. Other languages are examples only.';
+      return;
+    }
+    try {
+      // capture console.log
+      const logs = [];
+      const orig = console.log;
+      console.log = function(){
+        logs.push(Array.from(arguments).join(' '));
+      };
+      // run safely using Function
+      const fn = new Function(snippets[current].code + '\\nreturn true;');
+      fn();
+      console.log = orig;
+      outputBox.textContent = logs.length ? logs.join('\\n') : 'No output (JS ran).';
+    } catch(err){
+      outputBox.textContent = 'Runtime error: ' + err.message;
+    }
+  });
+
+  // keyboard ESC to close
+  document.addEventListener('keydown', (e)=> {
+    if(e.key === 'Escape' && modal.style.display === 'block') modal.style.display = 'none';
+  });
+
+  // expose snippets for later extension
+  window.__CODE_SNIPPETS = snippets;
+
+})();
+</script>
+
+
+
+<!-- MATRIX BACKGROUND -->
+<canvas id="matrix"></canvas>
+
+
+<!-- ============================================================
+       LOGIN SYSTEM
+===============================================================-->
+<div id="loginWindow">
+
+    <h1>[ Kali Web Login ]</h1>
+
+    <div id="terminalOutput">
+        <p>Initializing system...</p>
+        <p>Loading kernel modules...</p>
+        <p>Checking dependencies...</p>
+        <p style="color: var(--scan);">Ready.</p>
+    </div>
+
+    <div class="inputRow">
+        <label>Username:</label>
+        <input type="text" id="username" autocomplete="off" />
+    </div>
+
+    <div class="inputRow">
+        <label>Password:</label>
+        <input type="password" id="password" />
+    </div>
+
+    <button id="loginBtn">Login</button>
+    <div id="loginError"></div>
+</div>
+
+
+
+<!-- ============================================================
+       DESKTOP INTERFACE (AFTER LOGIN)
+===============================================================-->
+<div id="desktop">
+
+    <!-- Buttons like OS menu -->
+    <div id="taskbar">
+        <button class="task-btn" onclick="openTerminal()">Open Terminal</button>
+        <button class="task-btn">Tools</button>
+        <button class="task-btn">Scanner</button>
+        <button class="task-btn">Settings</button>
+    </div>
+
+    <!-- Terminal window -->
+    <div class="terminalWindow" id="terminalApp">
+        <div class="terminalHeader">
+            <span>root@kali:~</span>
+        </div>
+        <div class="terminalContent" id="terminalScreen">
+            <p>Welcome to Kali Web Terminal</p>
+            <p>Type <b>help</b> to list commands</p>
+        </div>
+
+        <div class="terminalInput">
+            <span style="margin-right:5px;color:#0f0;">root@kali:~#</span>
+            <input id="terminalInputField" autofocus />
+        </div>
+    </div>
+
+</div>
+
+
+
+<script>
+
+/* ============================================================
+   MATRIX ANIMATION SCRIPT
+===============================================================*/
+
+const c = document.getElementById("matrix");
+const ctx = c.getContext("2d");
+
+c.height = window.innerHeight;
+c.width = window.innerWidth;
+
+let matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()";
+matrixChars = matrixChars.split("");
+
+let fontSize = 14;
+let columns = c.width / fontSize;
+
+let drops = [];
+for (let x = 0; x < columns; x++) drops[x] = 1;
+
+
+function drawMatrix() {
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
+    ctx.fillRect(0,0,c.width,c.height);
+
+    ctx.fillStyle = "#00ff55";
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+        let text = matrixChars[Math.floor(Math.random()*matrixChars.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > c.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+    }
+}
+setInterval(drawMatrix, 50);
+
+
+/* ============================================================
+   LOGIN LOGIC
+===============================================================*/
+
+document.getElementById("loginBtn").addEventListener("click", login);
+
+function login() {
+    let user = document.getElementById("username").value;
+    let pass = document.getElementById("password").value;
+
+    if (user === "root" && pass === "toor") {
+        document.getElementById("loginWindow").style.display = "none";
+        document.getElementById("desktop").style.display = "block";
+    } else {
+        document.getElementById("loginError").innerHTML =
+            "Authentication failed: invalid username or password";
+    }
+}
+
+
+/* ============================================================
+   TERMINAL EMULATOR COMMANDS
+===============================================================*/
+
+let terminalScreen = document.getElementById("terminalScreen");
+let inputField = document.getElementById("terminalInputField");
+
+inputField.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        let cmd = inputField.value.trim();
+        inputField.value = "";
+        executeCommand(cmd);
+    }
+});
+
+function executeCommand(cmd) {
+    let line = document.createElement("p");
+    line.innerHTML = `<span style="color:#0f0;">root@kali:~# </span>${cmd}`;
+    terminalScreen.appendChild(line);
+
+    if (cmd === "help") {
+        terminalScreen.innerHTML += `
+        <p>Available commands:</p>
+        <p>help - show commands</p>
+        <p>clear - clean terminal</p>
+        <p>scan - fake network scan</p>
+        <p>about - show system info</p>
+        `;
+    }
+
+    else if(cmd === "clear") {
+        terminalScreen.innerHTML = "";
+    }
+
+    else if (cmd === "scan") {
+        terminalScreen.innerHTML += `<p>Scanning network...</p>`;
+        setTimeout(()=>{
+            terminalScreen.innerHTML += `<p>Found target: 192.168.1.13 (Open Ports: 22,80,443)</p>`;
+        },2000);
+    }
+
+    else if(cmd === "about") {
+        terminalScreen.innerHTML += `<p>Kali Web Terminal Simulator v1.0</p>`;
+    }
+
+    else {
+        terminalScreen.innerHTML += `<p style="color:red;">Command not found: ${cmd}</p>`;
+    }
+
+    terminalScreen.scrollTop = terminalScreen.scrollHeight;
+}
+
+
+/* ============================================================
+   OPEN TERMINAL
+===============================================================*/
+
+function openTerminal(){
+    document.getElementById("terminalApp").style.display = "flex";
+}
+
+</script>
+</body>
+</html>
